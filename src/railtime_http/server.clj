@@ -1,5 +1,6 @@
 (ns railtime-http.server
-  (:require [noir.server :as server]))
+  (:require [noir.server :as server])
+  (:gen-class))
 
 (server/load-views-ns 'railtime-http.views)
 
