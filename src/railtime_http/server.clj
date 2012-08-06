@@ -9,4 +9,4 @@
     (server/start port {:mode mode
                         :ns 'railtime-http})))
 
-;; curl -H "Content-Type: application/json" "http://localhost:8080/UP-N"
+;; curl -H "Content-Type: application/json" "http://localhost:8080/railtime/UP-N"
