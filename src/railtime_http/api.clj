@@ -4,13 +4,14 @@
     [clojure.string :as string]
     [cheshire.core :as json]
     [clj-http.client :as http]
-    [clojure.tools.cli :as cli]
     [clj-time.core :as time]
     [clj-time.local :as time-l]
     [clj-time.coerce :as time-c]
     [clj-time.format :as time-f])
   (:import (java.util Date)))
-
+            
+(def ^:const url-domain "http://metrarail.com/content/metra/en/home/jcr:content/trainTracker.lataexport.html")
+(def ^:const url-tracker "http://12.205.200.243/AJAXTrainTracker.svc/GetAcquityTrainData")
 (def ^:const delay-threshold-minutes 30)
 
 (defn- encode-date [datetime]
@@ -20,9 +21,12 @@
 
 ;; return java Date from "/Date(<timestamp>)/" with an actual date
 ;; have to handle negative ints due to API oddity
+(defn- decode-date-long [date-str]
+  (Long/valueOf
+    (re-find #"-{0,1}\d+" date-str)))
+    
 (defn- decode-date [date-str]
-  (Date. (Long/valueOf
-    (re-find #"-{0,1}\d+" date-str))))
+  (Date. (decode-date-long date-str)))
 
 (defn- seq-trains [trains] 
   "turn map of 3 upcoming trains into sequence of trains"
@@ -106,5 +110,12 @@
         (str-train-time "Estimated: " (estimated train))))
     (if (not (available? train))
       (println "[Train Unavailable]"))))
+      
+(defn sanitize-train [info] 
+  (when (and (map? info) (not (= "0000" (:train_num info))))
+    (let [train (:train_num info)
+          scheduled (decode-date-long (:scheduled_dpt_time info))
+          estimated (decode-date-long (:estimated_dpt_time info))]
+      (into {} {:train train :scheduled scheduled :estimated estimated}))))
 
 ;;curl -H "Content-Type: application/json" -d "{\"stationRequest\":{\"Corridor\":\"UP-N\",\"Destination\":\"OTC\",\"Origin\":\"EVANSTON\",\"timestamp\":\"/Date(1341469669133-0000)/\"}}" "http://12.205.200.243/AJAXTrainTracker.svc/GetAcquityTrainData"clear

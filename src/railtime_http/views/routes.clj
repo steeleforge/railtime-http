@@ -3,23 +3,22 @@
   (:require [noir.response :as response]
             [railtime-http.api :as rt]
             [cheshire.core :as json]))
-            
-(def ^:const url-domain "http://metrarail.com/content/metra/en/home/jcr:content/trainTracker.lataexport.html")
-(def ^:const url-tracker "http://12.205.200.243/AJAXTrainTracker.svc/GetAcquityTrainData")
         
 (defpage [:get "/railtime"] []
     (json/generate-string 
-      (rt/request-lines-stations url-domain)))
+      (rt/request-lines-stations rt/url-domain)))
   
 (defpage [:get "/railtime/:line"] {:keys [line]}
     (json/generate-string 
-      ((keyword (.toUpperCase line)) (rt/request-lines-stations url-domain))))
+      ((keyword (.toUpperCase line)) (rt/request-lines-stations rt/url-domain))))
 
   
 (defpage [:get "/railtime/:line/:origin/:destination"] 
   {:keys [line origin destination]}
     (json/generate-string
-      (rt/request-tracker-trains url-tracker 
-        {:line line 
-        :origin origin
-        :destination destination})))
+      (into [] 
+        (filter map? (map rt/sanitize-train 
+          (vals (rt/request-tracker-trains rt/url-tracker 
+            {:line line 
+            :origin origin
+            :destination destination})))))))
